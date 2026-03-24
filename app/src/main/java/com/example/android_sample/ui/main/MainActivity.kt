@@ -11,7 +11,6 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import com.example.android_sample.databinding.ActivityMainBinding
-import com.example.framework.crash.CrashReporter
 import com.example.framework.network.update.UpdateInfo
 import com.example.framework.ui.base.BaseActivity
 import com.example.framework.ui.ext.toast
@@ -23,7 +22,7 @@ import com.example.framework.ui.ext.toast
  * - 继承 [BaseActivity]，通过 ViewBinding 访问 View
  * - 通过 [launchWhenStarted] 安全订阅 Flow
  * - 统一处理 loading / error 状态
- * - ACRA 崩溃上报测试（手动上报 & 触发崩溃）
+ * - ACRA 崩溃测试
  */
 class MainActivity : BaseActivity<ActivityMainBinding>(ActivityMainBinding::inflate) {
 
@@ -50,19 +49,9 @@ class MainActivity : BaseActivity<ActivityMainBinding>(ActivityMainBinding::infl
         // Android 13+ 请求通知权限（ACRA 崩溃通知需要）
         requestNotificationPermissionIfNeeded()
 
-        // 手动上报：模拟一个已被 try-catch 捕获的非致命异常（静默上报，不触发通知）
-        binding.btnReportManual.setOnClickListener {
-            val exception = RuntimeException("这是一个手动触发的测试异常（非致命，ACRA 静默上报）")
-            CrashReporter.reportSilent(exception)
-            toast("已静默上报，查看 logcat 确认（tag: CrashReporter）")
-        }
-
-        // 触发崩溃：抛出未捕获异常，App 崩溃重启后 ACRA 弹通知，点「发送报告」调起分享
+        // 触发崩溃：崩溃发生时立即弹出通知，点「分享日志」可导出堆栈信息
         binding.btnTriggerCrash.setOnClickListener {
-            toast("即将触发崩溃，重启后点通知中的「发送报告」按鈕…")
-            binding.root.postDelayed({
-                throw RuntimeException("ACRA 崩溃测试：这是一个故意触发的未捕获异常")
-            }, 500)
+            throw RuntimeException("ACRA 崩溃测试：这是一个故意触发的未捕获异常")
         }
 
         // 检查更新
