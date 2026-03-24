@@ -53,7 +53,7 @@ abstract class BaseViewModel : ViewModel() {
     }
 
     /** 在 viewModelScope 中启动协程，异常由 [exceptionHandler] 兜底 */
-    protected fun launch(block: suspend CoroutineScope.() -> Unit) =
+    protected fun launch(block: suspend CoroutineScope.() -> Unit): kotlinx.coroutines.Job =
         viewModelScope.launch(exceptionHandler, block = block)
 
     /** 更新 loading 状态 */

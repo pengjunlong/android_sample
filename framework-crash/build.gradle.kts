@@ -1,5 +1,3 @@
-import jdk.tools.jlink.resources.plugins
-
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
@@ -45,10 +43,6 @@ dependencies {
     implementation(libs.acra.http)
     // Debug 时用 Toast 提示崩溃
     implementation(libs.acra.toast)
-    // 可选：邮件上报
-    // implementation(libs.acra.mail)
-    // 可选：通知栏展示崩溃信息
-    // implementation(libs.acra.notification)
 
     testImplementation(libs.junit)
     testImplementation(libs.mockk)

@@ -1,5 +1,3 @@
-import jdk.tools.jlink.resources.plugins
-
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
@@ -38,6 +36,7 @@ android {
 dependencies {
     implementation(project(":framework-core"))
     implementation(project(":framework-logger"))
+    implementation(project(":framework-network"))
 
     api(libs.androidx.appcompat)
     api(libs.material)

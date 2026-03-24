@@ -1,16 +1,13 @@
 package com.example.android_sample
 
-import com.example.android_sample.BuildConfig
 import com.example.framework.core.BaseApplication
 import com.example.framework.core.initializer.FrameworkInitializer
 import com.example.framework.crash.CrashConfig
 import com.example.framework.crash.CrashReporter
 import com.example.framework.logger.L
 import com.example.framework.logger.LoggerInitializer
-import com.example.framework.logger.ReleaseTree
 import com.example.framework.network.NetworkConfig
 import com.example.framework.network.NetworkManager
-import com.example.framework.storage.KVStore
 import com.example.framework.storage.StorageInitializer
 
 /**
@@ -21,16 +18,14 @@ import com.example.framework.storage.StorageInitializer
 class SampleApplication : BaseApplication() {
 
     override fun registerInitializers() {
-        // 1. 崩溃上报（最高优先级，MIN_VALUE）
+        // 1. 崩溃上报（最高优先级，在 attachBaseContext 阶段初始化）
+        //    崩溃后重启 App 会弹通知，点击「发送报告」调起系统分享菜单
         FrameworkInitializer.register(
             CrashReporter.initializer(
                 CrashConfig.Builder()
-                    // 生产环境替换为真实的崩溃收集服务器地址
-                    // .reportUrl("https://your-acra-server.com/report")
-                    .enableInDebug(false)          // Debug 包不上报（避免污染数据）
-                    .toastEnabled(true)            // Debug 包崩溃时 Toast 提示
+                    .enableInDebug(BuildConfig.DEBUG) // Debug 包也启用，方便测试
+                    .toastEnabled(true)               // 崩溃时 Toast 提示
                     .crashListener { _, throwable ->
-                        // 可在此写本地日志文件
                         L.e(throwable, "App crashed!")
                     }
                     .build()
@@ -38,19 +33,7 @@ class SampleApplication : BaseApplication() {
         )
 
         // 2. 日志（优先级 -100）
-        FrameworkInitializer.register(
-            LoggerInitializer()
-            // Release 环境如需将 ERROR 上报崩溃平台：
-            // object : LoggerInitializer() {
-            //     override fun initialize(application: Application) {
-            //         if (AppUtils.isDebug()) {
-            //             Timber.plant(Timber.DebugTree())
-            //         } else {
-            //             Timber.plant(ReleaseTree { CrashReporter.reportSilent(it) })
-            //         }
-            //     }
-            // }
-        )
+        FrameworkInitializer.register(LoggerInitializer())
 
         // 3. 存储（优先级 -80）
         FrameworkInitializer.register(StorageInitializer())
@@ -68,9 +51,6 @@ class SampleApplication : BaseApplication() {
 
     override fun onAppCreate() {
         L.i("SampleApplication started. version=${packageName}")
-
-        // 示例：存储用户信息
-        // KVStore.putString("app_first_launch", System.currentTimeMillis().toString())
     }
 }
 

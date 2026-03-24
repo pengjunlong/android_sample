@@ -19,9 +19,11 @@ object AppContext {
             "AppContext is not initialized. Make sure your Application extends BaseApplication."
         )
 
-    /** ApplicationContext */
+    /** ApplicationContext（attachBaseContext 阶段可直接用 application 实例） */
     val context: Context
-        get() = application.applicationContext
+        get() = _application ?: error(
+            "AppContext is not initialized. Make sure your Application extends BaseApplication."
+        )
 
     internal fun init(app: Application) {
         if (_application == null) {

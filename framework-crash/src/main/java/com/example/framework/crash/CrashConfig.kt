@@ -8,10 +8,10 @@ package com.example.framework.crash
  * ### 示例
  * ```kotlin
  * val config = CrashConfig.Builder()
- *     .reportUrl("https://your-server.com/acra/report")
- *     .enableInDebug(false)
- *     .toastEnabled(true)
- *     .crashListener { thread, throwable ->
+ *     .enableInDebug(true)           // Debug 包也上报，方便测试
+ *     .toastEnabled(true)            // 崩溃时 Toast 提示
+ *     .notificationTitle("崩溃报告")  // 可选：自定义通知标题
+ *     .crashListener { _, throwable ->
  *         // 写本地日志 / 上报自定义监控平台
  *     }
  *     .build()
@@ -30,6 +30,12 @@ data class CrashConfig(
     /** 自定义 Toast 提示文字（null 则用默认文案）*/
     val toastText: String? = null,
 
+    /** 通知标题（null 则用默认文案）*/
+    val notificationTitle: String? = null,
+
+    /** 通知正文（null 则用默认文案）*/
+    val notificationText: String? = null,
+
     /** 崩溃监听（可用于写本地日志等附加操作）*/
     val crashListener: CrashListener? = null,
 ) {
@@ -41,12 +47,16 @@ data class CrashConfig(
         private var enableInDebug: Boolean = false
         private var toastEnabled: Boolean = true
         private var toastText: String? = null
+        private var notificationTitle: String? = null
+        private var notificationText: String? = null
         private var crashListener: CrashListener? = null
 
         fun reportUrl(url: String) = apply { this.reportUrl = url }
         fun enableInDebug(enabled: Boolean) = apply { this.enableInDebug = enabled }
         fun toastEnabled(enabled: Boolean) = apply { this.toastEnabled = enabled }
         fun toastText(text: String) = apply { this.toastText = text }
+        fun notificationTitle(title: String) = apply { this.notificationTitle = title }
+        fun notificationText(text: String) = apply { this.notificationText = text }
         fun crashListener(listener: CrashListener) = apply { this.crashListener = listener }
 
         fun build() = CrashConfig(
@@ -54,6 +64,8 @@ data class CrashConfig(
             enableInDebug = enableInDebug,
             toastEnabled = toastEnabled,
             toastText = toastText,
+            notificationTitle = notificationTitle,
+            notificationText = notificationText,
             crashListener = crashListener,
         )
     }

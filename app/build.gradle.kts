@@ -1,4 +1,3 @@
-import jdk.tools.jlink.resources.plugins
 
 plugins {
     alias(libs.plugins.android.application)
@@ -49,6 +48,12 @@ android {
     buildFeatures {
         viewBinding = true
         buildConfig = true
+    }
+
+    packaging {
+        jniLibs {
+            useLegacyPackaging = true
+        }
     }
 }
 
