@@ -157,18 +157,88 @@ object CrashReporter {
         throwable.printStackTrace(PrintWriter(sw))
         val stamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
         val file = File(context.cacheDir, "crash_$stamp.txt")
-        file.writeText(
-            buildString {
-                appendLine("===== Crash Report =====")
-                appendLine("Time   : ${Date()}")
-                appendLine("Package: ${context.packageName}")
-                appendLine("Version: ${AppUtils.getVersionName()} (${AppUtils.getVersionCode()})")
-                appendLine()
-                appendLine(sw.toString())
-            }
-        )
+        file.writeText(buildCrashReport(context, throwable, sw.toString()))
         return file
     }
+
+    /** 构建完整的崩溃报告文本 */
+    private fun buildCrashReport(context: Context, throwable: Throwable, stackTrace: String): String {
+        val actManager = context.getSystemService(Context.ACTIVITY_SERVICE) as? android.app.ActivityManager
+        val memInfo = android.app.ActivityManager.MemoryInfo().also { actManager?.getMemoryInfo(it) }
+        val wm = context.getSystemService(Context.WINDOW_SERVICE) as? android.view.WindowManager
+        val displayMetrics = android.util.DisplayMetrics().also {
+            @Suppress("DEPRECATION")
+            wm?.defaultDisplay?.getRealMetrics(it)
+        }
+        val totalRam  = memInfo.totalMem.toMB()
+        val availRam  = memInfo.availMem.toMB()
+        val usedRam   = (memInfo.totalMem - memInfo.availMem).toMB()
+        val runtime   = Runtime.getRuntime()
+        val heapMax   = runtime.maxMemory().toMB()
+        val heapUsed  = (runtime.totalMemory() - runtime.freeMemory()).toMB()
+        val heapFree  = runtime.freeMemory().toMB()
+
+        return buildString {
+            appendLine("╔══════════════════════════════════════════════════╗")
+            appendLine("║              CRASH REPORT                        ║")
+            appendLine("╚══════════════════════════════════════════════════╝")
+            appendLine()
+
+            // ── 基础信息 ────────────────────────────────────────────────
+            appendLine("▌ APP INFO")
+            appendLine("  Package     : ${context.packageName}")
+            appendLine("  Version     : ${AppUtils.getVersionName()} (${AppUtils.getVersionCode()})")
+            appendLine("  Crash Time  : ${Date()}")
+            appendLine("  Exception   : ${throwable.javaClass.name}")
+            appendLine("  Message     : ${throwable.message}")
+            appendLine()
+
+            // ── 设备信息 ────────────────────────────────────────────────
+            appendLine("▌ DEVICE INFO")
+            appendLine("  Brand       : ${Build.BRAND}")
+            appendLine("  Manufacturer: ${Build.MANUFACTURER}")
+            appendLine("  Model       : ${Build.MODEL}")
+            appendLine("  Device      : ${Build.DEVICE}")
+            appendLine("  Product     : ${Build.PRODUCT}")
+            appendLine("  Hardware    : ${Build.HARDWARE}")
+            appendLine("  Board       : ${Build.BOARD}")
+            appendLine()
+
+            // ── 系统信息 ────────────────────────────────────────────────
+            appendLine("▌ OS INFO")
+            appendLine("  Android     : ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})")
+            appendLine("  Codename    : ${Build.VERSION.CODENAME}")
+            appendLine("  Build ID    : ${Build.ID}")
+            appendLine("  Fingerprint : ${Build.FINGERPRINT}")
+            appendLine("  ABI         : ${Build.SUPPORTED_ABIS.joinToString()}")
+            appendLine("  Locale      : ${Locale.getDefault()}")
+            appendLine("  Timezone    : ${java.util.TimeZone.getDefault().id}")
+            appendLine()
+
+            // ── 内存信息 ────────────────────────────────────────────────
+            appendLine("▌ MEMORY INFO")
+            appendLine("  RAM Total   : $totalRam MB")
+            appendLine("  RAM Used    : $usedRam MB")
+            appendLine("  RAM Avail   : $availRam MB  ${if (memInfo.lowMemory) "[LOW MEMORY]" else ""}")
+            appendLine("  Heap Max    : $heapMax MB")
+            appendLine("  Heap Used   : $heapUsed MB")
+            appendLine("  Heap Free   : $heapFree MB")
+            appendLine()
+
+            // ── 屏幕信息 ────────────────────────────────────────────────
+            appendLine("▌ DISPLAY INFO")
+            appendLine("  Resolution  : ${displayMetrics.widthPixels} x ${displayMetrics.heightPixels} px")
+            appendLine("  Density     : ${displayMetrics.density}x (${displayMetrics.densityDpi} dpi)")
+            appendLine()
+
+            // ── 堆栈信息 ────────────────────────────────────────────────
+            appendLine("▌ STACK TRACE")
+            appendLine(stackTrace)
+        }
+    }
+
+    /** Long 字节转 MB（保留一位小数） */
+    private fun Long.toMB(): String = String.format(Locale.US, "%.1f", this / 1024f / 1024f)
 
     /** 构建调起系统分享菜单的 Intent */
     private fun buildShareIntent(context: Context, throwable: Throwable, logFile: File): Intent {
