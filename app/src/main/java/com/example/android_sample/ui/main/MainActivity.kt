@@ -1,14 +1,18 @@
 package com.example.android_sample.ui.main
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.view.View
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import com.example.android_sample.databinding.ActivityMainBinding
 import com.example.framework.crash.CrashReporter
+import com.example.framework.network.update.UpdateInfo
 import com.example.framework.ui.base.BaseActivity
 import com.example.framework.ui.ext.toast
 
@@ -60,6 +64,11 @@ class MainActivity : BaseActivity<ActivityMainBinding>(ActivityMainBinding::infl
                 throw RuntimeException("ACRA 崩溃测试：这是一个故意触发的未捕获异常")
             }, 500)
         }
+
+        // 检查更新
+        binding.btnCheckUpdate.setOnClickListener {
+            viewModel.checkUpdate(this)
+        }
     }
 
     private fun requestNotificationPermissionIfNeeded() {
@@ -96,6 +105,28 @@ class MainActivity : BaseActivity<ActivityMainBinding>(ActivityMainBinding::infl
                 showError(message)
             }
         }
+
+        // 检查更新：按钮 loading 态
+        launchWhenStarted {
+            viewModel.isCheckingUpdate.collect { checking ->
+                binding.btnCheckUpdate.isEnabled = !checking
+                binding.btnCheckUpdate.text = if (checking) "检查中…" else "检查更新"
+            }
+        }
+
+        // 检查更新：有新版本
+        launchWhenStarted {
+            viewModel.updateAvailableEvent.collect { info ->
+                showUpdateDialog(info)
+            }
+        }
+
+        // 检查更新：无新版本 / 失败
+        launchWhenStarted {
+            viewModel.noUpdateEvent.collect { message ->
+                toast(message)
+            }
+        }
     }
 
     override fun showLoading(show: Boolean) {
@@ -105,6 +136,41 @@ class MainActivity : BaseActivity<ActivityMainBinding>(ActivityMainBinding::infl
 
     override fun showError(message: String) {
         toast("请求失败：$message")
+    }
+
+    /**
+     * 展示更新弹窗。
+     * - 有 APK 下载链接时：「立即下载」打开浏览器下载；
+     * - 无下载链接时：「查看详情」跳转 GitHub Release 页面；
+     * - 强制更新时隐藏「以后再说」按钮。
+     */
+    private fun showUpdateDialog(info: UpdateInfo) {
+        val positiveLabel = if (info.downloadUrl != null) "立即下载" else "查看详情"
+        val targetUrl     = info.downloadUrl ?: info.releasePageUrl
+
+        val dialog = AlertDialog.Builder(this)
+            .setTitle("发现新版本  v${info.latestVersion}")
+            .setMessage(buildString {
+                appendLine("当前版本：v${info.currentVersion}")
+                appendLine("最新版本：v${info.latestVersion}")
+                appendLine("发布时间：${info.publishedAt.take(10)}")
+                if (info.releaseNotes.isNotBlank()) {
+                    appendLine()
+                    appendLine("更新内容：")
+                    // 简单去除 Markdown 标记，只展示前 300 字
+                    appendLine(info.releaseNotes.replace(Regex("#{1,6}\\s*"), "").take(300))
+                }
+            })
+            .setPositiveButton(positiveLabel) { _, _ ->
+                startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(targetUrl)))
+            }
+            .setCancelable(!info.isForceUpdate)
+
+        if (!info.isForceUpdate) {
+            dialog.setNegativeButton("以后再说", null)
+        }
+
+        dialog.show()
     }
 }
 
