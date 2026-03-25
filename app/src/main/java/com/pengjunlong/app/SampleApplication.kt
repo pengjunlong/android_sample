@@ -1,4 +1,4 @@
-package com.example.android_sample
+package com.pengjunlong.app
 
 import com.example.framework.core.BaseApplication
 import com.example.framework.core.initializer.FrameworkInitializer
@@ -42,7 +42,7 @@ class SampleApplication : BaseApplication() {
         FrameworkInitializer.register(
             NetworkManager.initializer(
                 NetworkConfig(
-                    baseUrl = "https://jsonplaceholder.typicode.com/",
+                    baseUrl = BuildConfig.API_BASE_URL,
                     enableLogging = BuildConfig.DEBUG,
                 )
             )

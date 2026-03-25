@@ -10,17 +10,24 @@ val ciVersionName: String = findProperty("versionName")?.toString() ?: "1.0.0"
 val ciVersionCode: Int = findProperty("versionCode")?.toString()?.toIntOrNull() ?: 1
 
 android {
-    namespace = "com.example.android_sample"
+    namespace = "com.pengjunlong.app"
     compileSdk = libs.versions.compileSdk.get().toInt()
 
     defaultConfig {
-        applicationId = "com.example.android_sample"
+        applicationId = "com.pengjunlong.app"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
         versionCode = ciVersionCode
         versionName = ciVersionName
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // ── 可通过 BuildConfig 访问的配置常量 ──────────────────────────────
+        // API 服务地址（可按需扩展 debug/release 不同 baseUrl）
+        buildConfigField("String", "API_BASE_URL", "\"https://jsonplaceholder.typicode.com/\"")
+        // GitHub 仓库信息（检查更新用）
+        buildConfigField("String", "UPDATE_REPO_OWNER", "\"pengjunlong\"")
+        buildConfigField("String", "UPDATE_REPO_NAME",  "\"android_sample\"")
     }
 
     buildTypes {
