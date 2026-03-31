@@ -62,6 +62,23 @@ android {
             useLegacyPackaging = true
         }
     }
+
+    // ── APK 输出命名：自动从 strings.xml 读取 app_name ─────────────────────────
+    // Debug  → {app_name}-debug.apk
+    // Release → {app_name}-release.apk
+    applicationVariants.all {
+        val variant = this
+        variant.outputs.all {
+            val output = this as com.android.build.gradle.internal.api.ApkVariantOutputImpl
+            // 读取 app/src/main/res/values/strings.xml 中的 app_name
+            val stringsXml = file("src/main/res/values/strings.xml")
+            val appName = if (stringsXml.exists()) {
+                val content = stringsXml.readText()
+                Regex("<string name=\"app_name\">(.*?)</string>").find(content)?.groupValues?.get(1) ?: "app"
+            } else "app"
+            output.outputFileName = "${appName}-${variant.buildType.name.lowercase()}.apk"
+        }
+    }
 }
 
 dependencies {

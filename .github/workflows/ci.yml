@@ -22,6 +22,7 @@ env:
 
 # ════════════════════════════════════════════════════════════════════════════════
 # Job 1: PR Build & Test（仅 PR 触发）
+# APK 命名由 build.gradle.kts 的 applicationVariants 控制，自动读取 strings.xml
 # ════════════════════════════════════════════════════════════════════════════════
 jobs:
   build:
@@ -73,8 +74,8 @@ jobs:
           path: '**/build/reports/lint-results*.html'
           retention-days: 7
 
-      # ── Debug APK ─────────────────────────────────────────────────────────────
-      - name: Build Debug APK
+      # ── Debug APK（Gradle 自动命名为 {app_name}-debug.apk）───────────────────
+      - name: Build & Upload Debug APK
         run: ./gradlew assembleDebug --stacktrace
 
       - name: Upload Debug APK
@@ -86,6 +87,7 @@ jobs:
 
 # ════════════════════════════════════════════════════════════════════════════════
 # Job 2: Release（仅 Tag push 触发，不依赖 build job，直接打 release 包）
+# APK 命名由 build.gradle.kts 控制，Release 标题从 strings.xml 动态读取
 # ════════════════════════════════════════════════════════════════════════════════
   release:
     name: Release
@@ -127,6 +129,14 @@ jobs:
           echo "versionCode=$VERSION_CODE" >> $GITHUB_OUTPUT
           echo "📦 Tag: $TAG | Version: $VERSION | VersionCode: $VERSION_CODE"
 
+      # ── 从 strings.xml 读取 app_name（仅用于 Release 标题）────────────────────
+      - name: Extract app_name from strings.xml
+        id: app_name
+        run: |
+          APP_NAME=$(grep '<string name="app_name">' app/src/main/res/values/strings.xml | sed 's/.*<string name="app_name">\(.*\)<\/string>.*/\1/')
+          echo "app_name=$APP_NAME" >> $GITHUB_OUTPUT
+          echo "🏷️ app_name: $APP_NAME"
+
       # ── 还原签名 Keystore ─────────────────────────────────────────────────────
       - name: Decode Keystore
         env:
@@ -135,7 +145,7 @@ jobs:
           echo "$KEYSTORE_BASE64" | base64 --decode > $GITHUB_WORKSPACE/release.jks
           echo "✅ Keystore decoded to release.jks"
 
-      # ── 构建签名 Release APK ───────────────────────────────────────────────────
+      # ── 构建签名 Release APK（Gradle 自动命名为 {app_name}-release.apk）────────
       - name: Build Release APK
         env:
           KEYSTORE_FILE: ${{ github.workspace }}/release.jks
@@ -152,13 +162,13 @@ jobs:
             -PversionCode="${{ steps.version.outputs.versionCode }}" \
             --stacktrace
 
-      # ── 整理产物 ───────────────────────────────────────────────────────────────
+      # ── 整理产物（重命名为 {app_name}-{tag}.apk）──────────────────────────────
       - name: Collect APK artifacts
         run: |
           mkdir -p artifacts
-          find app/build/outputs/apk/release -name "*.apk" | while read f; do
-            BASENAME=$(basename "$f" .apk)
-            cp "$f" "artifacts/${BASENAME}-${{ steps.version.outputs.tag }}.apk"
+          TAG="${{ steps.version.outputs.tag }}"
+          for f in app/build/outputs/apk/release/*.apk; do
+            [ -f "$f" ] && cp "$f" "artifacts/${TAG#v}-${TAG}.apk"
           done
           echo "📂 Artifacts:"
           ls -lh artifacts/
@@ -184,7 +194,7 @@ jobs:
           tag_name: ${{ steps.version.outputs.tag }}
           name: Release ${{ steps.version.outputs.tag }}
           body: |
-            ## 📦 PJL App ${{ steps.version.outputs.tag }}
+            ## 📦 ${{ steps.app_name.outputs.app_name }} ${{ steps.version.outputs.tag }}
 
             **Version:** `${{ steps.version.outputs.version }}`
             **Version Code:** `${{ steps.version.outputs.versionCode }}`
