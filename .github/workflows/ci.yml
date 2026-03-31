@@ -1,8 +1,8 @@
 name: CI / CD
 
 # ── 触发条件 ────────────────────────────────────────────────────────────────────
-# • push tag v*.*.* → build + release
-# • PR to main/develop → build only
+# • push tag v*.*.* → release only（单独的精简流程）
+# • PR to main/develop → build + test + lint
 on:
   push:
     tags:
@@ -11,10 +11,6 @@ on:
     branches:
       - main
       - develop
-
-concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true   # 同一 ref 有新触发时取消旧的运行
 
 permissions:
   contents: write   # release job 需要写权限创建 GitHub Release
@@ -25,13 +21,14 @@ env:
   JAVA_DISTRIBUTION: 'temurin'
 
 # ════════════════════════════════════════════════════════════════════════════════
-# Job 1: Build & Test（PR 和 Tag 都触发）
+# Job 1: PR Build & Test（仅 PR 触发）
 # ════════════════════════════════════════════════════════════════════════════════
 jobs:
   build:
     name: Build & Test
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    if: github.event_name == 'pull_request'   # 仅 PR 触发，Tag 跳过
 
     steps:
       - name: Checkout code
@@ -88,13 +85,12 @@ jobs:
           retention-days: 7
 
 # ════════════════════════════════════════════════════════════════════════════════
-# Job 2: Release（仅 Tag push，且 build job 通过后才执行）
+# Job 2: Release（仅 Tag push 触发，不依赖 build job，直接打 release 包）
 # ════════════════════════════════════════════════════════════════════════════════
   release:
     name: Release
     runs-on: ubuntu-latest
-    timeout-minutes: 45
-    needs: build                          # 必须 build job 通过
+    timeout-minutes: 30
     if: startsWith(github.ref, 'refs/tags/v')   # 仅 Tag push 触发
 
     steps:
@@ -188,7 +184,7 @@ jobs:
           tag_name: ${{ steps.version.outputs.tag }}
           name: Release ${{ steps.version.outputs.tag }}
           body: |
-            ## 📦 Android Framework Sample ${{ steps.version.outputs.tag }}
+            ## 📦 PJL App ${{ steps.version.outputs.tag }}
 
             **Version:** `${{ steps.version.outputs.version }}`
             **Version Code:** `${{ steps.version.outputs.versionCode }}`
