@@ -168,7 +168,10 @@ jobs:
           mkdir -p artifacts
           TAG="${{ steps.version.outputs.tag }}"
           for f in app/build/outputs/apk/release/*.apk; do
-            [ -f "$f" ] && cp "$f" "artifacts/${TAG#v}-${TAG}.apk"
+            # Gradle 输出文件名如 App-release.apk，去掉 -release 后缀，拼上 tag
+            # 最终：App-v1.2.3.apk
+            BASENAME=$(basename "$f" -release.apk)
+            [ -f "$f" ] && cp "$f" "artifacts/${BASENAME}-${TAG}.apk"
           done
           echo "📂 Artifacts:"
           ls -lh artifacts/

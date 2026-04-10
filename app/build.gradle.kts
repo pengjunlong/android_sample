@@ -14,7 +14,7 @@ android {
     compileSdk = libs.versions.compileSdk.get().toInt()
 
     defaultConfig {
-        applicationId = "com.pengjunlong.app"
+        applicationId = "com.pengjunlong.app"  // TODO: 必须全局唯一，决定 App 安装覆盖/共存，接入新项目时务必修改
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
         versionCode = ciVersionCode
@@ -22,12 +22,12 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        // ── 可通过 BuildConfig 访问的配置常量 ──────────────────────────────
-        // API 服务地址（可按需扩展 debug/release 不同 baseUrl）
+        // ── TODO: 接入新项目时按需修改以下配置常量 ──────────────────────────
+        // API 服务地址（可按 buildType 分别配置 debug/release 不同地址）
         buildConfigField("String", "API_BASE_URL", "\"https://jsonplaceholder.typicode.com/\"")
-        // GitHub 仓库信息（检查更新用）
-        buildConfigField("String", "UPDATE_REPO_OWNER", "\"pengjunlong\"")
-        buildConfigField("String", "UPDATE_REPO_NAME",  "\"android_sample\"")
+        // GitHub 仓库信息（用于 BaseActivity 菜单中的「检查更新」功能）
+        buildConfigField("String", "UPDATE_REPO_OWNER", "\"pengjunlong\"")   // TODO: 改为自己的 GitHub 用户名/组织
+        buildConfigField("String", "UPDATE_REPO_NAME",  "\"android_sample\"") // TODO: 改为自己的仓库名
     }
 
     buildTypes {
