@@ -4,9 +4,8 @@ import com.pengjunlong.app.data.model.Post
 import retrofit2.http.GET
 import retrofit2.http.Path
 
-/**
- * 示例 API（使用 https://jsonplaceholder.typicode.com）
- */
+// TODO: [SAMPLE] 这是演示用的 API 接口（对应 https://jsonplaceholder.typicode.com）
+//       接入新项目时删除此文件，替换为自己的业务 API 接口
 interface PostApiService {
 
     @GET("posts")

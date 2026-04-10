@@ -11,15 +11,20 @@ import com.example.framework.network.NetworkManager
 import com.example.framework.storage.StorageInitializer
 
 /**
- * 示例 Application
+ * Application 入口
  *
- * 演示如何通过 [BaseApplication] 接入框架各模块。
+ * 通过 [BaseApplication] 接入框架各模块，各模块均通过 [FrameworkInitializer] 按优先级有序初始化。
+ *
+ * ### 接入新项目时需关注：
+ * - [BuildConfig.API_BASE_URL]：替换为实际 API 地址（在 build.gradle.kts 配置）
+ * - [BuildConfig.UPDATE_REPO_OWNER] / [BuildConfig.UPDATE_REPO_NAME]：替换为自己的 GitHub 仓库
+ * - [CrashConfig]：按需调整崩溃上报策略
  */
-class SampleApplication : BaseApplication() {
+class App : BaseApplication() {
 
     override fun registerInitializers() {
         // 1. 崩溃上报（最高优先级，在 attachBaseContext 阶段初始化）
-        //    崩溃后重启 App 会弹通知，点击「发送报告」调起系统分享菜单
+        //    崩溃后立即发出通知，点击「发送报告」调起系统分享菜单
         FrameworkInitializer.register(
             CrashReporter.initializer(
                 CrashConfig.Builder()
@@ -50,7 +55,7 @@ class SampleApplication : BaseApplication() {
     }
 
     override fun onAppCreate() {
-        L.i("SampleApplication started. version=${packageName}")
+        L.i("App started. versionName=${BuildConfig.VERSION_NAME}")
     }
 }
 

@@ -13,13 +13,15 @@ import com.pengjunlong.app.BuildConfig
 import com.pengjunlong.app.databinding.ActivityMainBinding
 
 /**
- * 示例 MainActivity
+ * 主页 Activity
  *
  * 演示：
  * - 继承 [BaseActivity]，通过 ViewBinding 访问 View
  * - 通过 [launchWhenStarted] 安全订阅 Flow
  * - 统一处理 loading / error 状态
  * - 检查更新入口由 [BaseActivity] 统一放在 ActionBar 溢出菜单（⋮）中
+ *
+ * TODO: [SAMPLE] [MainViewModel] 中的 posts 数据流是演示代码，接入新项目时替换为自己的业务逻辑。
  */
 class MainActivity : BaseActivity<ActivityMainBinding>(ActivityMainBinding::inflate) {
 
